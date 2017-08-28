@@ -169,15 +169,10 @@ sampling <- function(df, n) {
 
 distributions <- 
 distributions %>% 
-  mutate(samp3 = map(.$distr, sampling, 3)) 
-
-distributions <- 
-distributions %>% 
-  mutate(samp10 = map(.$distr, sampling, 10)) 
-
-distributions <- 
-distributions %>% 
-  mutate(samp100 = map(.$distr, sampling, 100)) 
+  mutate(samp3 = map(.$distr, sampling, 3),
+         samp10 = map(.$distr, sampling, 10),
+         samp100 = map(.$distr, sampling, 100)
+  ) 
 
 
 df <- 
