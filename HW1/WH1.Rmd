@@ -1,0 +1,224 @@
+---
+title: "Homework 1"
+author: "Joaquin Rodriguez"
+date: "8/22/2017"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message=FALSE)
+
+library(tidyverse)
+```
+
+## 1
+```{r }
+v <- seq(from = 1,to = 100,by = 2)
+```
+
+## 2
+```{r }
+v <- as_tibble(v)
+v <- 
+  v %>% 
+  filter(., value > 60) %>% 
+  filter(., value < 100)
+```
+
+
+## 3
+```{r }
+v %>% var(.)
+```
+
+## 4
+```{r }
+df <- data.frame(c(2.27, 1.98, 1.69, 1.88, 1.64, 2.14), 
+                 c(8.28, 8.04, 9.06, 8.7, 7.58, 8.34))
+names(df) <- c("R", "H")
+
+df$V <- 1/3 * pi * df$R^2 * df$H
+```
+
+
+## 5
+```{r }
+x <- c(3.15, -0.55, -0.35, 0.16)
+y <- c(2.93, -0.35, -0.25, -0.12)
+
+X <- matrix(
+  c(rep(1, 4), x),
+  ncol = 2
+)
+
+solve((t(X) %*% X)) %*% (t(X) %*% matrix(y))
+
+
+#summary(lm(y ~ x))
+lsfit(x, y)
+```
+
+## 6
+```{r }
+library(MASS)
+
+data("cats")
+cats <- as_tibble(cats)
+```
+
+## 7
+```{r }
+cats %>% count(Sex)
+```
+
+## 8
+```{r }
+cats %>% 
+  group_by(Sex) %>% 
+  summarise(mean(Bwt))
+
+cats %>% 
+  group_by(Sex) %>% 
+  summarise(sd(Bwt))
+```
+
+## 9
+```{r }
+freqover2.5 <- 
+  cats %>% 
+  mutate(., Over2.5 = ifelse(Bwt > 2.5, T, F)) %>% 
+  group_by(Sex) %>% 
+  count(Over2.5) %>% 
+  spread(., key = Over2.5, value = n) %>% 
+  mutate(., Proportion = `TRUE` / sum(`TRUE`, `FALSE`))
+```
+
+## 10
+```{r }
+catsM <- 
+  cats %>% 
+  filter(., Sex == "M") %>% 
+  list(.)
+
+catsF <- 
+  cats %>% 
+  filter(., Sex == "F") %>% 
+  list(.)
+```
+
+## Generate Distributions and Sample Means
+
+```{r}
+set.seed(10)
+distributions <- 
+  tribble(
+    ~f, ~params,
+    "rnorm", list(n = 1000),
+    "rexp", list(n = 1000),
+    "rbinom", list( n = 1000, size = 1, p = 0.1)
+    )
+
+distributions <- 
+  distributions %>% 
+  mutate(distr = invoke_map(f, params))
+
+sampling <- function(df, n) {
+  result <- vector("double", 2000)
+  for(i in 1:2000) {
+    result[[i]] <- 
+      df %>%
+      sample(n, replace = T) %>% 
+      mean
+  }
+  return(result)
+}
+
+
+distributions <- 
+distributions %>% 
+  mutate(samp3 = map(.$distr, sampling, 3),
+         samp10 = map(.$distr, sampling, 10),
+         samp100 = map(.$distr, sampling, 100)
+  ) 
+
+
+df <- 
+  distributions %>% 
+  .$samp3 %>% 
+  as.data.frame()
+
+names(df) <- c("rnorm","rexp","rbinom")
+
+df <- gather(df)
+df$n <- 3
+
+df1 <- 
+  distributions %>% 
+  .$samp10 %>% 
+  as.data.frame()
+
+names(df1) <- c("rnorm","rexp","rbinom")
+df1 <- gather(df1)
+df1$n <- 10
+
+df <- bind_rows(df,df1)
+
+df1 <- 
+  distributions %>% 
+  .$samp100 %>% 
+  as.data.frame()
+
+names(df1) <- c("rnorm","rexp","rbinom")
+df1 <- gather(df1)
+df1$n <- 100
+
+df <- bind_rows(df,df1)
+
+```
+
+## Normal Distribution
+```{r}
+df %>% 
+  filter(key=="rnorm") %>% 
+  ggplot() + 
+  geom_histogram(aes(x=value,y=..density..), position="identity") + 
+  geom_density(aes(x=value,y=..density..)) +
+  facet_grid(.~n, scales = "free") +
+  ggtitle('Central Limit Theorem', 
+    subtitle = 'The distributions of the means seem to always be bell shape')
+  
+```
+
+
+## Exponential Distribution
+
+```{r}
+df %>% 
+  filter(key=="rexp") %>% 
+  ggplot() + 
+  geom_histogram(aes(x=value,y=..density..), position="identity") + 
+  geom_density(aes(x=value,y=..density..)) +
+  facet_grid(.~n, scales = "free") +
+  ggtitle('Central Limit Theorem', 
+    subtitle = 'The distributions of the means are bell shaped when sample is > 30')
+  
+```
+
+## Binomial Distribution
+
+```{r}
+df %>% 
+  filter(key=="rbinom") %>% 
+  ggplot() + 
+  geom_histogram(aes(x=value,y=..density..), position="identity") + 
+  geom_density(aes(x=value,y=..density..)) +
+  facet_grid(.~n, scales = "free") +
+  ggtitle('Central Limit Theorem', 
+    subtitle = 'The distributions of the means are bell shaped when sample is > 30')
+  
+```
+

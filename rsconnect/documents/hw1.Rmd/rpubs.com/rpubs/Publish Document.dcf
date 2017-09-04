@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/302542/49636d9c78634009af2a4ce2b1d1f776
+bundleId: https://api.rpubs.com/api/v1/document/302542/49636d9c78634009af2a4ce2b1d1f776
+url: http://rpubs.com/zampolli75/302542
+when: 1503967673.43287

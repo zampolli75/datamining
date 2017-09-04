@@ -1,0 +1,156 @@
+---
+title: "HW2"
+author: "Joaquin Rodriguez"
+date: "8/29/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(tidyverse)
+
+forbes <- read.csv(file = "Forbes2000.csv", header = T)
+forbes <- as.tibble(forbes)
+```
+
+
+## 1. Find the median profit for the companies in the US, UK, France and Germany
+
+```{r cars}
+forbes %>%
+  filter(country == c("United States","United Kingdom","France","Germany")) %>% 
+  group_by(country) %>%
+  summarise(median = median(profits, na.rm = T))
+```
+
+## 2. Find all German companies with negative profit
+
+```{r}
+forbes %>% 
+  filter(country == "Germany" &  profits < 0)
+```
+
+## 3. Find the business category to which most of the Bermuda island companies belong
+
+```{r}
+forbes %>%
+  filter(country == "Bermuda") %>% 
+  count(category)
+```
+
+## 4. Find the 50 companies in the Forbes dataset with the highest profit 
+plot sales against assets, labelling each point with approriate country name which may need to be abbreviated (using abbreviate) to avoid makeing the plot look too messy
+
+```{r}
+forbes %>% 
+  arrange(desc(profits)) %>% 
+  top_n(50) %>% 
+  ggplot(aes(x = sales, y = assets)) +
+  geom_point() +
+  geom_text(aes(label = abbreviate(country)))
+```
+
+## 5. Find the average value of sales for the companies in each country
+
+```{r}
+forbes %>% 
+  group_by(country) %>% 
+  summarise(avg = mean(sales, na.rm = T)) %>% 
+  arrange(desc(avg))
+```
+
+## 6. Find the number of companies in each country with profits above 5 billion US dollars
+
+```{r}
+forbes %>% 
+  filter(profits > 5) %>% 
+  group_by(country) %>% 
+  count(country) %>% 
+  arrange(desc(n))
+```
+
+## 7. Fit a logistic regression model on the South African Heart Disease Dataset
+
+```{r}
+heart <- 
+  read.table("http://statweb.lsu.edu/faculty/li/data/SAheart.txt",
+	           sep=",", header=T, row.names=1) %>% 
+  as.tibble(.)
+```
+
+## 7.a) Set the 'Present' as 1 and 'Absent' as 0 for variable 'famhist'.
+
+```{r}
+heart$famhist <- 
+  heart %>% 
+  .$famhist %>% 
+  recode(., "Present" = 1, "Absent" = 0)
+```
+
+## 7.b) There are 462 observations in the dataset. Randomly split the dataset into 400 observations as the training set. The rest 62 observations as the test set.
+
+```{r}
+train <- 
+  heart %>% 
+  sample_n(400, replace = F)
+
+test <- setdiff(heart, train)
+```
+
+
+## 7.c) Then fit a logistic regression using 'famhist' (now become 0 and 1 binary variable) as the response and all the other variables as the explanatory variables.
+
+```{r}
+fit1 <- 
+  train %>% 
+  glm(formula = famhist ~ ., family = "binomial", data = .)
+
+fit1 %>% summary
+
+```
+
+## 7.d) Make the prediction on the training and test sets. Using the 0.5 as the cutoff point to get the misclassification rate on the training and test sets, respectively.
+
+```{r}
+tab1 <- table(fit1$fitted.values >= 0.5, train$famhist)
+## misclassification rate on train set
+1- sum(diag(tab1)) / sum(tab1)
+
+pred1 <- predict(fit1, test, type = "response")
+tab1 <- table(pred1 >= 0.5, test$famhist)
+
+## misclassification rate on test set
+1- sum(diag(tab1)) / sum(tab1)
+
+```
+
+## 7.e) Find the AUC score and plot the ROC curve based on the test set performance.  
+
+```{r}
+library(AUC)
+auc(roc(pred1, factor(test$famhist)))
+
+roc <- 
+  pred1 %>%
+  specificity(., factor(test$famhist)) %>% 
+  .$measure %>% 
+  as.tibble()
+names(roc) <- c("spe1")
+
+roc <-
+  roc %>% 
+  mutate(sen1 = sensitivity(pred1, factor(test$famhist))$measure)
+
+roc %>%
+  ggplot() + 
+  geom_line(aes(x = 1-spe1, y = sen1)) +
+  labs(x = "1 - Specificity", y = "Sensitivity", title = "ROC graph")
+
+```
+
+
+
