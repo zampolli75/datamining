@@ -1,12 +1,15 @@
 ---
 title: "HW2"
 author: "Joaquin Rodriguez"
-date: "8/29/2017"
-output: html_document
+date: "9/04/2017"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message=FALSE)
 ```
 
 
@@ -39,11 +42,11 @@ forbes %>%
 ```{r}
 forbes %>%
   filter(country == "Bermuda") %>% 
-  count(category)
+  count(category) %>% 
+  arrange(desc(n))
 ```
 
-## 4. Find the 50 companies in the Forbes dataset with the highest profit 
-plot sales against assets, labelling each point with approriate country name which may need to be abbreviated (using abbreviate) to avoid makeing the plot look too messy
+## 4. Find the 50 companies in the Forbes dataset with the highest profit. Plot sales against assets, labelling each point with approriate country name which may need to be abbreviated (using abbreviate) to avoid makeing the plot look too messy
 
 ```{r}
 forbes %>% 
@@ -117,15 +120,17 @@ fit1 %>% summary
 
 ```{r}
 tab1 <- table(fit1$fitted.values >= 0.5, train$famhist)
+tab1
 ## misclassification rate on train set
-1- sum(diag(tab1)) / sum(tab1)
+misstrain <- 1- sum(diag(tab1)) / sum(tab1)
+misstrain
 
 pred1 <- predict(fit1, test, type = "response")
 tab1 <- table(pred1 >= 0.5, test$famhist)
-
+tab1
 ## misclassification rate on test set
-1- sum(diag(tab1)) / sum(tab1)
-
+misstest <- 1- sum(diag(tab1)) / sum(tab1)
+misstest
 ```
 
 ## 7.e) Find the AUC score and plot the ROC curve based on the test set performance.  
@@ -148,9 +153,8 @@ roc <-
 roc %>%
   ggplot() + 
   geom_line(aes(x = 1-spe1, y = sen1)) +
-  labs(x = "1 - Specificity", y = "Sensitivity", title = "ROC graph")
-
+  labs(x = "1 - Specificity", y = "Sensitivity", title = "ROC graph") +
+  annotate("text", x = 0.6, y = 0.25, label = paste("Misclassification on test data: ", round(misstest,2))) +
+  geom_abline(intercept = 0, slope = 1, color = "blue")
 ```
-
-
 
